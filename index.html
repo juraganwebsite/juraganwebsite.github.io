@@ -1561,7 +1561,7 @@
                     {isSidebarOpen && <div onClick={closeSidebar} className='fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden'></div>}
                                          <aside className={`fixed inset-y-0 left-0 bg-fresh-white h-full z-40 transition-all duration-300 ease-in-out transform flex flex-col md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 w-64 shadow-lg' : '-translate-x-full w-64'} md:w-64`}>
                                        <div className="flex items-center border-b border-fresh h-16 px-4 justify-between">
-                <img src={logoUrl} alt="Logo Aplikasi" className="h-8 w-auto" />
+                <img src={logoUrl} alt="Logo Aplikasi" className="h-11 w-auto" />
                 <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 rounded-md hover-fresh"><X size={24} /></button>
               </div>
                         <nav className="flex-grow p-4">
@@ -1591,7 +1591,7 @@
                     <div className="flex-1 flex flex-col overflow-y-auto">
                         <header className="bg-white p-4 flex items-center border-b sticky top-0 z-30 h-16 relative">
                           <button onClick={() => setIsSidebarOpen(true)} className="text-gray-500 md:hidden mr-2"><Menu size={24} /></button>
-                          <img src={logoUrl} alt="Logo Aplikasi" className="h-8 w-auto mr-3 md:hidden" />
+                          <img src={logoUrl} alt="Logo Aplikasi" className="h-11 w-auto mr-3 md:hidden" />
                           <div className="flex-1 flex justify-center">
                             <div className="relative w-full max-w-md">
                               <input type="text" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} onFocus={() => setShowGlobalDropdown(true)} onBlur={() => setTimeout(()=>setShowGlobalDropdown(false),150)} placeholder="Cari pelanggan, layanan, produk..." className="border border-gray-300 rounded-md pl-9 pr-10 py-2 w-full focus:ring-blue-500 focus:border-blue-500 text-sm transition-all duration-200" />
