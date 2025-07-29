@@ -187,12 +187,13 @@
                                 }
                             }
                         } else {
-                            console.warn(`Gagal mengambil logo, status: ${response.status}`);
-                            addToast(`Gagal memuat konfigurasi: ${response.statusText}`, 'error');
+                            const errorMsg = `Gagal terhubung ke server (Error ${response.status}). Periksa URL Apps Script.`;
+                            console.warn(errorMsg, response.statusText);
+                            addToast(errorMsg, 'error');
                         }
                     } catch (err) {
-                        console.error('Gagal mengambil logo dari server:', err);
-                        addToast('Gagal terhubung ke server. Periksa koneksi dan URL Apps Script.', 'error');
+                        console.error('Kesalahan jaringan saat mengambil konfigurasi:', err);
+                        addToast('Gagal terhubung ke server. Periksa koneksi internet dan URL Apps Script.', 'error');
                     }
                 };
 
