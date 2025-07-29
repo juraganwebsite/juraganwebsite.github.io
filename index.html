@@ -40,6 +40,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
+    <!-- App Config -->
+    <script src="config.js"></script>
+
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -182,8 +185,8 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // --- GANTI DENGAN URL WEB APP ANDA DARI GOOGLE APPS SCRIPT ---
-        const SCRIPT_URL = localStorage.getItem('hpanel_script_url') || 'https://script.google.com/macros/s/AKfycbzeDHDOGD3Gybt6mux8cPlOYnBfHl7pSYas5WEoJdkpVPjaNr_i7mKuDdaZgSsgM2mr/exec';
+        // URL Apps Script diambil dari localStorage atau dari config.js
+        const SCRIPT_URL = localStorage.getItem('hpanel_script_url') || window.DEFAULT_SCRIPT_URL;
 
         // --- ICONS ---
         const icons = {
@@ -437,7 +440,7 @@
             );
         };
         
-        const CrudModal = ({ isOpen, onClose, onSave, onDelete, children, title, isEdit, saveButtonText = "Simpan", submissionStatus, item }) => (
+        const CrudModal = ({ isOpen, onClose, onSave, onDelete, children, title, isEdit, saveButtonText = "Simpan", submissionStatus, item, extraFooter }) => (
             <Modal isOpen={isOpen} onClose={onClose} title={title}>
                 <form onSubmit={(e) => { e.preventDefault(); onSave(); }}>
                     <div className="p-6 space-y-4">{children}</div>
@@ -450,7 +453,8 @@
                                 </button>
                             )}
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex gap-3 items-center">
+                            {extraFooter}
                             <button type="button" onClick={onClose} disabled={submissionStatus.type !== null} className="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 disabled:opacity-50">Batal</button>
                             <button type="submit" disabled={submissionStatus.type !== null} className="px-4 py-2 bg-primary-500 text-white font-semibold rounded-lg hover:bg-primary-600 disabled:bg-primary-600 flex items-center justify-center min-w-[100px]">
                                 {submissionStatus.type === 'save' ? <Spinner className="h-5 w-5"/> : saveButtonText}
@@ -482,7 +486,7 @@
             useEffect(() => { setFormData(item || { name: '', email: '', whatsapp: '' }); }, [item, isOpen]);
             const handleChange = (e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); };
             return (
-                <CrudModal isOpen={isOpen} onClose={onClose} onSave={() => onSave(formData)} onDelete={onDelete} title={item ? 'Edit Pelanggan' : 'Tambah Pelanggan'} isEdit={!!item} submissionStatus={submissionStatus}>
+                <CrudModal isOpen={isOpen} onClose={onClose} onSave={() => onSave('customer', formData)} onDelete={onDelete} title={item ? 'Edit Pelanggan' : 'Tambah Pelanggan'} isEdit={!!item} submissionStatus={submissionStatus}>
                     <div><label className="block text-sm font-medium text-gray-600 mb-1">Nama Lengkap</label><input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5" required /></div>
                     <div><label className="block text-sm font-medium text-gray-600 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5" required /></div>
                     <div><label className="block text-sm font-medium text-gray-600 mb-1">No. WhatsApp</label><input type="tel" name="whatsapp" value={formData.whatsapp} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5" required /></div>
@@ -490,7 +494,7 @@
             );
         };
         const ProductModal = ({ isOpen, onClose, onSave, onDelete, item, submissionStatus, products }) => {
-            const [formData, setFormData] = useState({ name: '', type: '', price: 0, cycle: 'Tahunan', status: 'Tersedia' });
+            const [formData, setFormData] = useState({ name: '', type: '', initialPrice: 0, price: 0, cycle: 'Tahunan', status: 'Tersedia' });
             const [isCustomType, setIsCustomType] = useState(false);
 
             // Ambil tipe unik dari produk yang sudah ada
@@ -498,17 +502,24 @@
 
             useEffect(() => {
                 if (item) {
-                    setFormData(item);
+                    setFormData({
+                        ...item,
+                        initialPrice: item.initialPrice !== undefined ? item.initialPrice : (item.initialPrice || 0)
+                    });
                     setIsCustomType(item.type && !typeOptions.includes(item.type));
                 } else {
-                    setFormData({ name: '', type: '', price: 0, cycle: 'Tahunan', status: 'Tersedia' });
+                    setFormData({ name: '', type: '', initialPrice: 0, price: 0, cycle: 'Tahunan', status: 'Tersedia' });
                     setIsCustomType(false);
                 }
             }, [item, isOpen]);
 
             const handleChange = (e) => {
                 const { name, value } = e.target;
-                setFormData(prev => ({ ...prev, [name]: name === 'price' ? parseFloat(value) || 0 : value }));
+                if (name === 'price' || name === 'initialPrice') {
+                    setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
+                } else {
+                    setFormData(prev => ({ ...prev, [name]: value }));
+                }
             };
 
             const handleTypeChange = (e) => {
@@ -546,7 +557,8 @@
                             />
                         )}
                     </div>
-                    <div><label className="block text-sm font-medium text-gray-600 mb-1">Harga (Rp)</label><input type="number" name="price" value={formData.price} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5" required /></div>
+                    <div><label className="block text-sm font-medium text-gray-600 mb-1">Harga Awal (Rp)</label><input type="number" name="initialPrice" value={formData.initialPrice} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5" required /></div>
+                    <div><label className="block text-sm font-medium text-gray-600 mb-1">Harga Perpanjangan (Rp)</label><input type="number" name="price" value={formData.price} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5" required /></div>
                     <div><label className="block text-sm font-medium text-gray-600 mb-1">Siklus</label><select name="cycle" value={formData.cycle} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 bg-white"><option>Tahunan</option><option>Bulanan</option><option>Sekali Bayar</option></select></div>
                     <div><label className="block text-sm font-medium text-gray-600 mb-1">Status</label><select name="status" value={formData.status} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 bg-white"><option>Tersedia</option><option>Diarsipkan</option></select></div>
                 </CrudModal>
@@ -554,11 +566,91 @@
         };
         const ServiceModal = ({ isOpen, onClose, onSave, onDelete, item, customers, products, submissionStatus }) => {
             const [formData, setFormData] = useState({ customerId: '', productId: '', name: '', price: 0, expiryDate: '', status: 'Aktif' });
+            const [isCreatingInvoice, setIsCreatingInvoice] = useState(false);
+            // Sync window.invoices dan window.addToast saja (window.postData sudah di-assign di App)
+            useEffect(() => {
+                window.invoices = window.invoices || [];
+                window.addToast = window.addToast || (() => {});
+                window.fetchData = window.fetchData || (() => Promise.resolve());
+            }, []);
             useEffect(() => { if (item) { setFormData({ ...item, expiryDate: new Date(item.expiryDate).toISOString().split('T')[0] }); } else { setFormData({ customerId: '', productId: '', name: '', price: 0, expiryDate: '', status: 'Aktif' }); } }, [item, isOpen]);
             const handleChange = (e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); };
             useEffect(() => { if(formData.productId) { const product = products.find(p => p.id == formData.productId); if(product) { setFormData(prev => ({...prev, price: product.price, type: product.type})); } } }, [formData.productId, products]);
+
+            // Handler buat invoice langsung
+            const handleCreateInvoice = async () => {
+                setIsCreatingInvoice(true);
+                try {
+                    // Ambil data invoice terbaru dari localStorage jika ada
+                    let invoices = [];
+                    try {
+                        const cached = localStorage.getItem('hpanel_data');
+                        if (cached) {
+                            const data = JSON.parse(cached);
+                            invoices = data.invoices || [];
+                        }
+                    } catch {}
+                    // Cek invoice ganda
+                    if (invoices.some(inv => inv.serviceId == (item?.id || formData.id) && (inv.status === 'Belum Dibayar' || inv.status === 'Jatuh Tempo'))) {
+                        if (window.addToast) window.addToast('Sudah ada invoice aktif untuk layanan ini!', 'error');
+                        setIsCreatingInvoice(false);
+                        return;
+                    }
+                    const newInvoice = {
+                        id: `INV-${Date.now().toString().slice(-5)}-${item?.id || formData.id}`,
+                        customerId: Number(formData.customerId),
+                        serviceId: item?.id || formData.id,
+                        serviceName: formData.name,
+                        amount: Number(formData.price),
+                        status: 'Belum Dibayar',
+                        dueDate: new Date(formData.expiryDate),
+                        publishingDate: new Date().toISOString()
+                    };
+                    let result = { success: false };
+                    if (window.postData) {
+                        result = await window.postData('SAVE_INVOICES', [newInvoice]);
+                    }
+                    if (result.success) {
+                        if (window.addToast) window.addToast('Invoice berhasil dibuat!', 'success');
+                        // Tambah notifikasi sukses
+                        let notif = null;
+                        if (window.postData) {
+                            notif = {
+                                iconName: 'FileText',
+                                text: `Invoice baru untuk layanan ${formData.name} berhasil dibuat.`,
+                                page: 'Tagihan',
+                                targetId: newInvoice.id,
+                                id: Date.now() + Math.floor(Math.random()*10000),
+                                createdAt: new Date().toISOString(),
+                                read: false
+                            };
+                            await window.postData('SAVE_NOTIFICATION', notif);
+                        }
+                        // Update state invoices dan notifications lokal jika ada
+                        if (window.setInvoices && typeof window.setInvoices === 'function') {
+                            window.setInvoices(prev => [
+                                {...newInvoice, dueDate: new Date(newInvoice.dueDate)},
+                                ...prev
+                            ]);
+                        }
+                        if (window.setNotifications && typeof window.setNotifications === 'function' && notif) {
+                            window.setNotifications(prev => [notif, ...prev]);
+                        }
+                        localStorage.removeItem('hpanel_data');
+                        if (window.fetchData) await window.fetchData(false);
+                        if (onClose) onClose(); // Tutup popup setelah sukses
+                    } else {
+                        if (window.addToast) window.addToast('Gagal membuat invoice: ' + (result.error || 'Unknown error'), 'error');
+                    }
+                } catch (e) {
+                    if (window.addToast) window.addToast('Gagal membuat invoice: ' + (e.message || 'Unknown error'), 'error');
+                }
+                setIsCreatingInvoice(false);
+            };
+
             return (
-                <CrudModal isOpen={isOpen} onClose={onClose} onSave={() => onSave({...formData, expiryDate: new Date(formData.expiryDate)})} onDelete={onDelete} title="Kelola Layanan" isEdit={!!item} submissionStatus={submissionStatus}>
+                <CrudModal isOpen={isOpen} onClose={onClose} onSave={() => onSave({...formData, expiryDate: new Date(formData.expiryDate)})} onDelete={onDelete} title="Kelola Layanan" isEdit={!!item} submissionStatus={submissionStatus}
+                    extraFooter={<button type="button" onClick={handleCreateInvoice} disabled={isCreatingInvoice || !isOpen} className="px-4 py-2 border border-primary-500 text-primary-600 font-semibold rounded-lg hover:bg-primary-50 disabled:opacity-50 flex items-center">{isCreatingInvoice ? <Spinner className='h-5 w-5 mr-2' /> : 'Buat Invoice'}</button>}>
                     <div><label className="block text-sm font-medium text-gray-600 mb-1">Pelanggan</label><select name="customerId" value={formData.customerId} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 bg-white">{customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.customerId})</option>)}</select></div>
                     <div><label className="block text-sm font-medium text-gray-600 mb-1">Produk</label><select name="productId" value={formData.productId} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 bg-white">{products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.type})</option>)}</select></div>
                     <div><label className="block text-sm font-medium text-gray-600 mb-1">Domain</label><input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5" required /></div>
@@ -589,11 +681,27 @@
             const handleSave = () => { if (!formData.customerId || !formData.productId || !formData.domain) { return; } onSave({ ...formData, expiryDate: new Date(formData.expiryDate) }); };
             return (
                 <CrudModal isOpen={isOpen} onClose={onClose} onSave={handleSave} title="Buat Layanan Baru" saveButtonText="Simpan Layanan" submissionStatus={submissionStatus}>
-                    <label className="block text-sm font-medium text-gray-700">Pilih Pelanggan</label><select name="customerId" value={formData.customerId} onChange={handleChange} className="w-full p-2.5 border border-gray-300 rounded-lg bg-white"><option value="">-- Pilih Pelanggan --</option>{customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.customerId})</option>)}</select>
-                    <label className="block text-sm font-medium text-gray-700">Pilih Produk</label><select name="productId" value={formData.productId} onChange={handleChange} className="w-full p-2.5 border border-gray-300 rounded-lg bg-white"><option value="">-- Pilih Produk --</option>{products.filter(p => p.status === 'Tersedia').map(p => <option key={p.id} value={p.id}>{p.name} ({p.type})</option>)}</select>
-                    {selectedProduct && <div className='bg-gray-50 p-4 rounded-lg my-4 space-y-2 text-sm'><p><span className='font-semibold'>Harga:</span> Rp {Number(selectedProduct.price).toLocaleString('id-ID')}</p><p><span className='font-semibold'>Siklus:</span> {selectedProduct.cycle}</p></div>}
-                    <label className="block text-sm font-medium text-gray-700">Nama Domain</label><input type="text" name="domain" value={formData.domain} onChange={handleChange} placeholder="contohdomain.com" className="w-full border border-gray-300 rounded-lg p-2.5" />
-                    <label className="block text-sm font-medium text-gray-700">Tanggal Berakhir</label><input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5" />
+                    <label className="block text-sm font-medium text-gray-700">Pilih Pelanggan</label>
+                    <select name="customerId" value={formData.customerId} onChange={handleChange} className="w-full p-2.5 border border-gray-300 rounded-lg bg-white">
+                        <option value="">-- Pilih Pelanggan --</option>
+                        {customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.customerId})</option>)}
+                    </select>
+                    <label className="block text-sm font-medium text-gray-700">Pilih Produk</label>
+                    <select name="productId" value={formData.productId} onChange={handleChange} className="w-full p-2.5 border border-gray-300 rounded-lg bg-white">
+                        <option value="">-- Pilih Produk --</option>
+                        {products.filter(p => p.status === 'Tersedia').map(p => <option key={p.id} value={p.id}>{p.name} ({p.type})</option>)}
+                    </select>
+                    {selectedProduct && (
+                        <div className='bg-gray-50 p-4 rounded-lg my-4 space-y-2 text-sm'>
+                            <p><span className='font-semibold'>Harga Awal:</span> Rp {Number(selectedProduct.initialPrice || 0).toLocaleString('id-ID')}</p>
+                            <p><span className='font-semibold'>Harga Perpanjangan:</span> Rp {Number(selectedProduct.price || 0).toLocaleString('id-ID')}</p>
+                            <p><span className='font-semibold'>Siklus:</span> {selectedProduct.cycle}</p>
+                        </div>
+                    )}
+                    <label className="block text-sm font-medium text-gray-700">Nama Domain</label>
+                    <input type="text" name="domain" value={formData.domain} onChange={handleChange} placeholder="contohdomain.com" className="w-full border border-gray-300 rounded-lg p-2.5" />
+                    <label className="block text-sm font-medium text-gray-700">Tanggal Berakhir</label>
+                    <input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5" />
                 </CrudModal>
             );
         };
@@ -1020,25 +1128,46 @@
             const paginatedProducts = useMemo(() => { const startIndex = (currentPage - 1) * ITEMS_PER_PAGE; return filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE); }, [filteredProducts, currentPage]);
             const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
             return (
-                                 <div className="p-4 md:p-6"><div className="bg-fresh-white p-4 md:p-6 rounded-xl border border-fresh shadow-sm"><div className="flex justify-between items-center mb-4"><h3 className="text-lg font-semibold">Daftar Produk</h3><button onClick={() => onOpenModal('product')} className='flex items-center bg-primary-500 text-white font-bold py-2 px-4 rounded-md text-sm'>+ Produk</button></div><div className="mb-4"><SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} placeholder="Cari produk atau tipe..." /></div><div className="overflow-x-auto"><table className="min-w-full text-sm"><thead className="bg-gray-50">
-<tr>{['Nama Produk', 'Tipe', 'Harga', 'Status', 'Aksi'].map(h => (
-    <th key={h} className={`py-3 px-4 text-xs font-medium text-gray-500 uppercase ${h === 'Status' || h === 'Aksi' ? 'text-center' : 'text-left'} whitespace-nowrap`}>{h}</th>
-))}</tr>
-</thead>
-<tbody className="bg-white divide-y">
-{paginatedProducts.map(item => (
-    <tr key={item.id} className="hover:bg-gray-50">
-        <td className="py-3 px-4 font-medium whitespace-nowrap">{item.name}</td>
-        <td className="py-3 px-4 whitespace-nowrap">{item.type}</td>
-        <td className="py-3 px-4 whitespace-nowrap">Rp {item.price.toLocaleString('id-ID')}</td>
-        <td className="py-3 px-4 text-center whitespace-nowrap"><StatusBadge status={item.status} /></td>
-        <td className="py-3 px-4 text-center flex justify-center gap-2 whitespace-nowrap">
-                         <button onClick={() => onOpenModal('product', item)} className='bg-primary-500 text-white font-semibold px-3 py-1.5 rounded-md hover:bg-primary-600 text-xs'>Kelola</button>
-        </td>
-    </tr>
-))}
-</tbody>
-</table></div><Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} /></div></div>
+                <div className="p-4 md:p-6">
+                  <div className="bg-fresh-white p-4 md:p-6 rounded-xl border border-fresh shadow-sm">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold">Daftar Produk</h3>
+                      <button onClick={() => onOpenModal('product')} className='flex items-center bg-primary-500 text-white font-bold py-2 px-4 rounded-md text-sm'>+ Produk</button>
+                    </div>
+                    <div className="mb-4">
+                      <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} placeholder="Cari produk atau tipe..." />
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="py-3 px-4 text-xs font-medium text-gray-500 uppercase text-left whitespace-nowrap">Nama Produk</th>
+                            <th className="py-3 px-4 text-xs font-medium text-gray-500 uppercase text-left whitespace-nowrap">Tipe</th>
+                            <th className="py-3 px-4 text-xs font-medium text-gray-500 uppercase text-left whitespace-nowrap">Harga Awal</th>
+                            <th className="py-3 px-4 text-xs font-medium text-gray-500 uppercase text-left whitespace-nowrap">Harga Perpanjangan</th>
+                            <th className="py-3 px-4 text-xs font-medium text-gray-500 uppercase text-center whitespace-nowrap">Status</th>
+                            <th className="py-3 px-4 text-xs font-medium text-gray-500 uppercase text-center whitespace-nowrap">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y">
+                          {paginatedProducts.map(item => (
+                            <tr key={item.id} className="hover:bg-gray-50">
+                              <td className="py-3 px-4 font-medium whitespace-nowrap">{item.name}</td>
+                              <td className="py-3 px-4 whitespace-nowrap">{item.type}</td>
+                              <td className="py-3 px-4 whitespace-nowrap">Rp {Number(item.initialPrice || 0).toLocaleString('id-ID')}</td>
+                              <td className="py-3 px-4 whitespace-nowrap">Rp {Number(item.price || 0).toLocaleString('id-ID')}</td>
+                              <td className="py-3 px-4 text-center whitespace-nowrap"><StatusBadge status={item.status} /></td>
+                              <td className="py-3 px-4 text-center flex justify-center gap-2 whitespace-nowrap">
+                                <button onClick={() => onOpenModal('product', item)} className='bg-primary-500 text-white font-semibold px-3 py-1.5 rounded-md hover:bg-primary-600 text-xs'>Kelola</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+                  </div>
+                </div>
             );
         };
         const NotifikasiView = ({ notifications, onNotificationClick }) => {
@@ -1059,7 +1188,7 @@
             const [activePage, setActivePage] = useState('Beranda');
             const [isSidebarOpen, setIsSidebarOpen] = useState(false);
             const [pageContext, setPageContext] = useState({});
-            
+
             // Data states
             const [customers, setCustomers] = useState([]);
             const [products, setProducts] = useState([]);
@@ -1067,6 +1196,12 @@
             const [invoices, setInvoices] = useState([]);
             const [notifications, setNotifications] = useState([]);
             const [adminProfile, setAdminProfile] = useState({ name: 'Admin', email: 'admin@example.com', avatarUrl: null });
+
+            // Expose setInvoices dan setNotifications ke window agar bisa diakses ServiceModal
+            useEffect(() => {
+                window.setInvoices = setInvoices;
+                window.setNotifications = setNotifications;
+            }, [setInvoices, setNotifications]);
             
             // Loading and Error states
             const [isLoading, setIsLoading] = useState(true);
@@ -1326,7 +1461,6 @@
             const postData = useCallback(async (action, data) => {
                 try {
                     console.log('postData called:', { action, data, SCRIPT_URL });
-                    
                     const response = await fetch(SCRIPT_URL, {
                         method: 'POST',
                         headers: {
@@ -1334,20 +1468,15 @@
                         },
                         body: JSON.stringify({ action, data })
                     });
-                    
                     console.log('postData response status:', response.status);
-                    
                     if (!response.ok) {
                          throw new Error(`Server error: ${response.status} ${response.statusText}`);
                     }
-                    
                     const result = await response.json();
                     console.log('postData result:', result);
-                    
                     if (!result.success) {
                         throw new Error(result.error || 'An unknown error occurred on the server.');
                     }
-                    
                     return { success: true, data: result.data };
                 } catch (err) {
                     console.error("postData Error:", err);
@@ -1361,7 +1490,12 @@
                     addToast(`Gagal menyimpan data: ${err.message}`, 'error');
                     return { success: false, error: err.message };
                 }
-            }, []);
+            }, [SCRIPT_URL, addToast]);
+
+            // Pastikan window.postData selalu mengarah ke postData utama
+            useEffect(() => {
+                window.postData = postData;
+            }, [postData]);
 
             const addNotification = useCallback(async (notifData) => {
                 const newNotif = {
@@ -1376,31 +1510,36 @@
 
             const handleSave = async (type, itemToSave) => {
                 setSubmissionStatus({ type: 'save' });
-                const isNew = !itemToSave.id;
-                const action = `SAVE_${type.toUpperCase()}`;
+                try {
+                    const isNew = !itemToSave.id;
+                    const action = `SAVE_${type.toUpperCase()}`;
 
-                if (type === 'customer' && isNew) {
-                    itemToSave.joinDate = new Date();
-                }
-
-                const result = await postData(action, itemToSave);
-                
-                if (result.success) {
                     if (type === 'customer' && isNew) {
-                        await addNotification({
-                            iconName: 'Users',
-                            text: `Pelanggan baru, ${itemToSave.name}, telah ditambahkan.`,
-                            page: 'Pelanggan',
-                            targetId: itemToSave.name
-                        });
+                        itemToSave.joinDate = new Date();
                     }
-                    // Invalidate cache dan fetch ulang
-                    localStorage.removeItem('hpanel_data');
-                    addToast(`Data ${type} berhasil disimpan.`, 'success');
-                    closeModal();
-                    await fetchData(false);
+
+                    const result = await postData(action, itemToSave);
+                    if (result.success) {
+                        if (type === 'customer' && isNew) {
+                            await addNotification({
+                                iconName: 'Users',
+                                text: `Pelanggan baru, ${itemToSave.name}, telah ditambahkan.`,
+                                page: 'Pelanggan',
+                                targetId: itemToSave.name
+                            });
+                        }
+                        // Invalidate cache dan fetch ulang
+                        localStorage.removeItem('hpanel_data');
+                        addToast(`Data ${type} berhasil disimpan.`, 'success');
+                        closeModal();
+                        await fetchData(false);
+                    }
+                } catch (err) {
+                    // Error sudah ditangani di postData, cukup log jika perlu
+                    console.error('handleSave error:', err);
+                } finally {
+                    setSubmissionStatus({ type: null });
                 }
-                setSubmissionStatus({ type: null });
             };
 
             const handleDelete = (type, item) => {
@@ -1660,7 +1799,7 @@
                                  <div className="flex h-screen bg-fresh-gray font-sans text-sm">
                     {toasts.map(toast => <Toast key={toast.id} {...toast} onDismiss={() => removeToast(toast.id)} />)}
                     {modalType && (
-                        (modalType === 'customer') ? <CustomerModal submissionStatus={submissionStatus} isOpen={true} onClose={closeModal} onSave={(data) => handleSave('customer', data)} onDelete={() => handleDelete('customer', editingItem)} item={editingItem} /> :
+                        (modalType === 'customer') ? <CustomerModal submissionStatus={submissionStatus} isOpen={true} onClose={closeModal} onSave={handleSave} onDelete={() => handleDelete('customer', editingItem)} item={editingItem} /> :
                         (modalType === 'product') ? <ProductModal submissionStatus={submissionStatus} isOpen={true} onClose={closeModal} onSave={(data) => handleSave('product', data)} onDelete={() => handleDelete('product', editingItem)} item={editingItem} products={products} /> :
                         (modalType === 'service') ? <ServiceModal submissionStatus={submissionStatus} isOpen={true} onClose={closeModal} onSave={(data) => handleSave('service', data)} onDelete={() => handleDelete('service', editingItem)} item={editingItem} customers={customers} products={products} /> : null
                     )}
@@ -1733,7 +1872,7 @@
                                 <span className="mr-2 align-middle inline-flex"><Spinner className="h-5 w-5 text-gray-400" /></span>
                               )}
                               <button onClick={() => setIsNotificationOpen(p => !p)} className={`text-gray-500 p-2 rounded-full hover:bg-gray-100 ${unreadCount > 0 ? 'relative' : ''}`}>
-                                <Bell className={`h-6 w-6 ${unreadCount > 10 ? 'animate-shake-red' : ''}`} />
+                                <Bell className="h-6 w-6" />
                                                                   {unreadCount > 0 && (
                                     <span className="absolute -top-1 -right-1 block h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
                                       {unreadCount > 99 ? '99+' : unreadCount}
