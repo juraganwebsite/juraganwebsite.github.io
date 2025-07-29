@@ -36,6 +36,9 @@
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- App Config -->
+    <script src="config.js"></script>
+
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -68,8 +71,8 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // SCRIPT_URL - Ganti dengan URL Google Apps Script Anda
-        const SCRIPT_URL = localStorage.getItem('hpanel_script_url') || 'https://script.google.com/macros/s/AKfycbzeDHDOGD3Gybt6mux8cPlOYnBfHl7pSYas5WEoJdkpVPjaNr_i7mKuDdaZgSsgM2mr/exec';
+        // URL Apps Script diambil dari localStorage atau dari config.js
+        const SCRIPT_URL = localStorage.getItem('hpanel_script_url') || window.DEFAULT_SCRIPT_URL;
 
         // Icons
         const Eye = (props) => (
