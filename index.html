@@ -260,6 +260,17 @@
             return past.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
         };
 
+        const formatShortCurrency = (value) => {
+            if (value >= 1000000) {
+                // Menggunakan toFixed(1) dan mengganti .0 jika tidak ada desimal
+                return `${(value / 1000000).toFixed(1).replace(/\.0$/, '')}Jt`;
+            }
+            if (value >= 1000) {
+                return `${Math.round(value / 1000)}K`;
+            }
+            return value.toString();
+        };
+
         // --- UI COMPONENTS ---
         const Avatar = ({ name, imageUrl, size = 'md', className = '' }) => {
             const getInitials = (name) => {
@@ -358,7 +369,7 @@
             const maxValue = Math.max(...data.map(d => d[dataKey]));
             const yAxisLabels = Array.from({ length: 5 }, (_, i) => {
                 const value = (maxValue / 4) * i;
-                return value >= 1000000 ? `${(value / 1000000).toFixed(1)}Jt` : `${Math.round(value / 1000)}K`;
+                return formatShortCurrency(value);
             }).reverse();
             return (
                 <div className="h-64 w-full relative pt-4">
@@ -883,7 +894,12 @@
                 return { customers: fc, services: fs, invoices: fi };
             }, [customers, services, invoices, startDate, endDate]);
 
-            const stats = useMemo(() => ([ { value: filteredData.customers.length, label: 'Pelanggan' }, { value: filteredData.services.length, label: 'Layanan' }, { value: filteredData.invoices.filter(i => i.status === 'Lunas').reduce((sum, i) => sum + i.amount, 0).toLocaleString('id-ID', {style: 'currency', currency: 'IDR'}), label: 'Pendapatan' }, ]), [filteredData]);
+            const stats = useMemo(() => {
+                const revenue = filteredData.invoices.filter(i => i.status === 'Lunas').reduce((sum, i) => sum + i.amount, 0);
+                return [
+                    { value: filteredData.customers.length, label: 'Pelanggan' }, { value: filteredData.services.length, label: 'Layanan' }, { value: formatShortCurrency(revenue), label: 'Pendapatan' },
+                ];
+            }, [filteredData]);
             const revenueData = useMemo(() => { const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]; const data = months.map(month => ({ name: month, Pendapatan: 0 })); filteredData.invoices.forEach(inv => { if (inv.status === 'Lunas') { const monthIndex = new Date(inv.dueDate).getMonth(); data[monthIndex].Pendapatan += inv.amount; } }); return data; }, [filteredData.invoices]);
             
             const serviceCategoryData = useMemo(() => {
@@ -1246,7 +1262,7 @@
                 setError(null);
                 try {
                     const response = await fetch(SCRIPT_URL);
-                    if (!response.ok) throw new Error('Gagal mengambil data dari server.');
+                    if (!response.ok) throw new Error(`Gagal mengambil data dari server: ${response.status} ${response.statusText}`);
                     const result = await response.json();
                     if (!result.success) throw new Error(result.error || 'Terjadi kesalahan pada server script.');
                     
