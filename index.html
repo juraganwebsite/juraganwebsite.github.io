@@ -140,8 +140,8 @@
             }
             #invoice-printable-area {
                 position: static !important;
-                left: 0 !important;
-                top: 25mm !important;
+                left: 10mm !important;
+                top: 0 !important;
                 width: 210mm !important;
                 min-width: 0 !important;
                 max-width: 210mm !important;
@@ -152,7 +152,7 @@
                 background: #fff !important;
                 color: #222 !important;
                 box-shadow: none !important;
-                padding: 0 10mm 10mm 10mm !important;
+                padding: 0mm 10mm 10mm 10mm !important;
                 padding-top: 25mm !important;
                 border: none !important;
                 font-size: 13px !important;
@@ -934,8 +934,12 @@
 
             const stats = useMemo(() => {
                 const revenue = filteredData.invoices.filter(i => i.status === 'Lunas').reduce((sum, i) => sum + i.amount, 0);
+                const outstanding = filteredData.invoices.filter(i => i.status === 'Belum Dibayar' || i.status === 'Jatuh Tempo').reduce((sum, i) => sum + i.amount, 0);
                 return [
-                    { value: filteredData.customers.length, label: 'Pelanggan' }, { value: filteredData.services.length, label: 'Layanan' }, { value: formatShortCurrency(revenue), label: 'Pendapatan' },
+                    { value: filteredData.customers.length, label: 'Pelanggan' },
+                    { value: filteredData.services.length, label: 'Layanan' },
+                    { value: formatShortCurrency(revenue), label: 'Pendapatan' },
+                    { value: formatShortCurrency(outstanding), label: 'Tagihan Tertunggak' },
                 ];
             }, [filteredData]);
             const revenueData = useMemo(() => { const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]; const data = months.map(month => ({ name: month, Pendapatan: 0 })); filteredData.invoices.forEach(inv => { if (inv.status === 'Lunas') { const monthIndex = new Date(inv.dueDate).getMonth(); data[monthIndex].Pendapatan += inv.amount; } }); return data; }, [filteredData.invoices]);
@@ -1408,11 +1412,12 @@
                       const sisaHari = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
                       // Notifikasi normal (30 hari)
                       const text = `Layanan ${product ? product.name : ''} (${s.name}) untuk ${customer ? customer.name : ''} akan berakhir pada ${expDate.toLocaleDateString('id-ID')}`;
+                      // Notifikasi hanya dikirim sekali selama 30 hari sebelum kadaluarsa
                       const alreadyExists = existingNotifs.some(n =>
                         n.page === 'Layanan' &&
                         n.targetId === s.name &&
                         n.text === text &&
-                        new Date(n.createdAt).toDateString() === now.toDateString()
+                        new Date(n.createdAt) >= new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29)
                       );
                       if (!sent[s.id] && !alreadyExists) {
                         const notif = {
