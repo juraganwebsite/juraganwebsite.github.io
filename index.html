@@ -316,9 +316,13 @@
             // Minimal tinggi bar agar tetap terlihat
             const minBarHeight = 8; // px
             const [tooltip, setTooltip] = useState(null);
-            if (!data || data.length === 0) return <div className="h-64 flex items-center justify-center text-gray-500">Tidak ada data.</div>;
+            // Deteksi mobile
+            const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+            // Jika mobile, ambil 3 data terakhir
+            const chartData = isMobile && data && data.length > 3 ? data.slice(-3) : data;
+            if (!chartData || chartData.length === 0) return <div className="h-64 flex items-center justify-center text-gray-500">Tidak ada data.</div>;
             // Cari nilai maksimum dari Pendapatan dan Tagihan Tertunggak agar bar tertinggi benar-benar mencapai puncak chart
-            const maxValue = Math.max(...data.map(d => Math.max(d.Pendapatan, d.TagihanTertunggak)));
+            const maxValue = Math.max(...chartData.map(d => Math.max(d.Pendapatan, d.TagihanTertunggak)));
             // Buat label Y axis mulai dari 0, interval dinamis
             const interval = maxValue > 0 ? Math.ceil(maxValue / 4 / 1000000) * 1000000 : 1000000;
             const yAxisLabels = Array.from({ length: 5 }, (_, i) => formatShortCurrency(interval * i)).reverse();
@@ -336,7 +340,7 @@
                         </div>
                         {/* Bars side-by-side */}
                         <div className="absolute top-0 left-12 h-full w-[calc(100%-3rem)] flex justify-around items-end gap-4 px-2">
-                            {data.map((item, index) => (
+                            {chartData.map((item, index) => (
                 <div key={index} className="flex flex-col items-center flex-1 h-full justify-end group">
                     <div className="flex flex-row items-end gap-1 h-full">
                         <div
