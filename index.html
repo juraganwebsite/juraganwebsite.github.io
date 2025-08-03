@@ -6,6 +6,7 @@
     <title>Juragan Website - Panel Admin v4.4</title>
     
     <!-- Tailwind CSS CDN -->
+    <link rel="stylesheet" href="dashboard-mobile.css" />
     <script src="https://cdn.tailwindcss.com"></script>
       <script>
           tailwind.config = {
@@ -323,8 +324,15 @@
             if (!chartData || chartData.length === 0) return <div className="h-64 flex items-center justify-center text-gray-500">Tidak ada data.</div>;
             // Cari nilai maksimum dari Pendapatan dan Tagihan Tertunggak agar bar tertinggi benar-benar mencapai puncak chart
             const maxValue = Math.max(...chartData.map(d => Math.max(d.Pendapatan, d.TagihanTertunggak)));
-            // Buat label Y axis mulai dari 0, interval dinamis
-            const interval = maxValue > 0 ? Math.ceil(maxValue / 4 / 1000000) * 1000000 : 1000000;
+            // Tentukan step interval Y axis agar mudah dibaca (kelipatan 250K, 500K, 1Jt, dst)
+            let step = 1000000;
+            if (maxValue <= 1000000) step = 250000;
+            else if (maxValue <= 3000000) step = 500000;
+            else if (maxValue <= 10000000) step = 1000000;
+            else step = 5000000;
+            // Cari topLabel agar bar tertinggi menyentuh garis Y axis paling atas
+            const topLabel = Math.ceil(maxValue / step) * step;
+            const interval = topLabel / 4;
             const yAxisLabels = Array.from({ length: 5 }, (_, i) => formatShortCurrency(interval * i)).reverse();
             return (
                 <div>
@@ -341,15 +349,14 @@
                         {/* Bars side-by-side */}
                         <div className="absolute top-0 left-12 h-full w-[calc(100%-3rem)] flex justify-around items-end gap-4 px-2">
                             {chartData.map((item, index) => (
-                <div key={index} className="flex flex-col items-center flex-1 h-full justify-end group">
+                <div key={index} className="flex flex-col items-center flex-1 h-full group">
                     <div className="flex flex-row items-end gap-1 h-full">
                         <div
                             className="w-5 bg-gradient-to-t from-primary-400 to-primary-600 shadow-lg rounded-t-lg transition-all duration-500 cursor-pointer relative"
-                            style={{ height: item.Pendapatan > 0 ? `max(${(item.Pendapatan / maxValue) * 100}%, ${minBarHeight}px)` : `${minBarHeight}px` }}
+                            style={{ height: item.Pendapatan > 0 ? `calc(${(item.Pendapatan / maxValue) * 90}% )` : `${minBarHeight}px`, alignSelf: 'flex-end' }}
                             onMouseEnter={() => setTooltip({ ...item, index, type: 'Pendapatan' })}
                             onMouseLeave={() => setTooltip(null)}
                         >
-                            {/* Show colored tooltip on hover only */}
                             {tooltip && tooltip.index === index && tooltip.type === 'Pendapatan' && (
                                 <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs font-bold text-primary-700 bg-primary-100 px-2 py-0.5 rounded shadow z-10 whitespace-nowrap animate-fade-in">
                                     Pendapatan: {formatShortCurrency(item.Pendapatan)}
@@ -358,11 +365,10 @@
                         </div>
                         <div
                             className="w-5 bg-gradient-to-t from-red-300 to-red-500 shadow-lg rounded-t-lg transition-all duration-500 cursor-pointer relative"
-                            style={{ height: item.TagihanTertunggak > 0 ? `max(${(item.TagihanTertunggak / maxValue) * 100}%, ${minBarHeight}px)` : `${minBarHeight}px` }}
+                            style={{ height: item.TagihanTertunggak > 0 ? `calc(${(item.TagihanTertunggak / maxValue) * 90}% )` : `${minBarHeight}px`, alignSelf: 'flex-end' }}
                             onMouseEnter={() => setTooltip({ ...item, index, type: 'TagihanTertunggak' })}
                             onMouseLeave={() => setTooltip(null)}
                         >
-                            {/* Show colored tooltip on hover only */}
                             {tooltip && tooltip.index === index && tooltip.type === 'TagihanTertunggak' && (
                                 <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded shadow z-10 whitespace-nowrap animate-fade-in">
                                     Belum Dibayar: {formatShortCurrency(item.TagihanTertunggak)}
@@ -619,7 +625,7 @@
                         <div className="flex gap-3 items-center">
                             {extraFooter}
                             <button type="button" onClick={onClose} disabled={submissionStatus.type !== null} className="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 disabled:opacity-50">Batal</button>
-                            <button type="submit" disabled={submissionStatus.type !== null} className="px-4 py-2 bg-primary-500 text-white font-semibold rounded-lg hover:bg-primary-600 disabled:bg-primary-600 flex items-center justify-center min-w-[100px]">
+                            <button type="submit" disabled={submissionStatus.type !== null} className="px-4 py-2 bg-primary-500 text-white font-semibold rounded-lg hover:bg-primary-600 disabled:bg-primary-600 flex items-center justify-center min-w-[90px]">
                                 {submissionStatus.type === 'save' ? <Spinner className="h-5 w-5"/> : saveButtonText}
                             </button>
                         </div>
@@ -824,7 +830,7 @@
 
             return (
                 <CrudModal isOpen={isOpen} onClose={onClose} onSave={() => onSave({...formData, expiryDate: new Date(formData.expiryDate)})} onDelete={onDelete} title="Kelola Layanan" isEdit={!!item} submissionStatus={submissionStatus}
-                    extraFooter={<button type="button" onClick={handleCreateInvoice} disabled={isCreatingInvoice || !isOpen} className="px-4 py-2 border border-primary-500 text-primary-600 font-semibold rounded-lg hover:bg-primary-50 disabled:opacity-50 flex items-center">{isCreatingInvoice ? <Spinner className='h-5 w-5 mr-2' /> : '+ Invoice'}</button>}>
+                    extraFooter={<button type="button" onClick={handleCreateInvoice} disabled={isCreatingInvoice || !isOpen} className="px-4 py-2 border border-primary-500 text-primary-600 font-semibold rounded-lg hover:bg-primary-50 disabled:opacity-50 flex items-center">{isCreatingInvoice ? <Spinner className='h-5 w-5 mr-2' /> : 'Inv'}</button>}>
                     <div><label className="block text-sm font-medium text-gray-600 mb-1">Pelanggan</label><select name="customerId" value={formData.customerId} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 bg-white">{customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.customerId})</option>)}</select></div>
                     <div><label className="block text-sm font-medium text-gray-600 mb-1">Produk</label><select name="productId" value={formData.productId} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5 bg-white">{products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.type})</option>)}</select></div>
                     <div><label className="block text-sm font-medium text-gray-600 mb-1">Domain</label><input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2.5" required /></div>
@@ -1142,7 +1148,7 @@
             return (
                 <div className="p-4 md:p-6 space-y-6">
                                          <div className="bg-primary-500 text-white p-6 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between shadow-lg"><div className="flex items-center mb-4 md:mb-0"><div className="bg-primary-600 p-3 rounded-lg mr-4"><Server size={32} /></div><div><h2 className="text-xl font-bold">Selamat Datang, {adminProfile.name}!</h2><p className="text-primary-100 mt-1">Kelola semua dari sini.</p></div></div><button onClick={onNewOrderClick} className="bg-white text-primary-600 hover:bg-primary-100 font-bold py-3 px-5 rounded-lg flex items-center gap-2">New Order</button></div>
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"><h2 className="text-lg font-bold text-gray-800">Dashboard</h2><div className="flex flex-wrap items-center gap-2"><select value={dateRange} onChange={e => setDateRange(e.target.value)} className="bg-white border border-gray-300 rounded-md py-2 px-3 text-sm"><option value="7_days">7 Hari Terakhir</option><option value="this_month">Bulan Ini</option><option value="this_year">Tahun Ini</option><option value="custom">Kustom</option></select>{dateRange === 'custom' && (<div className="flex gap-2"><input type="date" value={customRange.start} onChange={e => setCustomRange(p => ({...p, start: e.target.value}))} className="bg-white border border-gray-300 rounded-md py-1.5 px-3 text-sm" /><input type="date" value={customRange.end} onChange={e => setCustomRange(p => ({...p, end: e.target.value}))} className="bg-white border border-gray-300 rounded-md py-1.5 px-3 text-sm" /></div>)}</div></div>
+<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 dashboard-filter-row"><h2 className="text-lg font-bold text-gray-800">Dashboard</h2><div className="flex flex-wrap items-center gap-2"><select value={dateRange} onChange={e => setDateRange(e.target.value)} className="bg-white border border-gray-300 rounded-md py-2 px-3 text-sm"><option value="7_days">7 Hari Terakhir</option><option value="this_month">Bulan Ini</option><option value="this_year">Tahun Ini</option><option value="custom">Kustom</option></select>{dateRange === 'custom' && (<div className="flex gap-2"><input type="date" value={customRange.start} onChange={e => setCustomRange(p => ({...p, start: e.target.value}))} className="bg-white border border-gray-300 rounded-md py-1.5 px-3 text-sm" /><input type="date" value={customRange.end} onChange={e => setCustomRange(p => ({...p, end: e.target.value}))} className="bg-white border border-gray-300 rounded-md py-1.5 px-3 text-sm" /></div>)}</div></div>
 <div>
   <h3 className="text-base font-semibold text-gray-800 mb-4">Statistik</h3>
   <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
