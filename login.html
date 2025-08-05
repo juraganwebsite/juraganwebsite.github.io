@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Juragan Website - Login</title>
+    <link rel="stylesheet" href="input-primary.css" />
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -24,7 +25,7 @@
                             800: '#075985',
                             900: '#0c4a6e',
                         },
-                        'primary-hover': '#005ecb',
+                        'primary-hover': '#009bfe',
                     }
                 }
             }
@@ -51,6 +52,14 @@
         .border-fresh { border-color: #e2e8f0; }
         .text-fresh-gray { color: #64748b; }
         .hover-fresh:hover { background-color: #f1f5f9; }
+
+        /* Professional input hover for login */
+
+        .input-primary:focus {
+            border-color: #009bfe !important; /* Tailwind primary-500 */
+            box-shadow: 0 2px 8px 0 rgba(0,122,255,0.12);
+            outline: none;
+        }
         
         @keyframes fade-in-up {
             from { opacity: 0; transform: translateY(20px); }
@@ -346,7 +355,7 @@
                                         required
                                         value={formData.email}
                                         onChange={handleInputChange}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                                        className="w-full px-4 py-3 border border-fresh rounded-lg input-primary"
                                         placeholder="admin@example.com"
                                     />
                                 </div>
@@ -365,7 +374,7 @@
                                             required
                                             value={formData.password}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                                            className="w-full px-4 py-3 pr-12 border border-fresh rounded-lg input-primary"
                                             placeholder="Masukkan password"
                                         />
                                         <button
