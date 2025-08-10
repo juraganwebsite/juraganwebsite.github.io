@@ -474,15 +474,23 @@
         };
         const Toast = ({ message, type, onDismiss }) => {
             const baseClasses = "fixed top-5 right-5 flex items-center p-4 rounded-lg shadow-lg text-white z-[100] animate-fade-in-down min-w-[220px]";
-            const typeClasses = { success: 'bg-green-500', info: 'bg-primary-500', error: 'bg-red-500' };
+            // Paksa semua info toast selalu pakai warna bg-primary-500, override apapun
+            const typeClasses = {
+                success: 'bg-green-500',
+                info: 'bg-primary-500',
+                error: 'bg-red-500'
+            };
             const iconMap = {
-                success: <CheckCircle className="w-5 h-5 mr-2 text-white" />,
-                info: <Info className="w-5 h-5 mr-2 text-white" />,
-                error: <AlertTriangle className="w-5 h-5 mr-2 text-white" />,
+                success: <CheckCircle className="w-5 h-5 mr-2 text-white" />, 
+                info: <Info className="w-5 h-5 mr-2 text-white" />, 
+                error: <AlertTriangle className="w-5 h-5 mr-2 text-white" />, 
             };
             useEffect(() => { const timer = setTimeout(onDismiss, 3000); return () => clearTimeout(timer); }, [onDismiss]);
+            // Selalu gunakan warna primary untuk info toast, override jika ada custom class
+            let toastClass = typeClasses[type];
+            if (type === 'info') toastClass = 'bg-primary-500';
             return (
-                <div className={`${baseClasses} ${typeClasses[type]}`}>{iconMap[type]}<span>{message}</span><button onClick={onDismiss} className="ml-4"><X size={18} /></button></div>
+                <div className={`${baseClasses} ${toastClass} ${type === 'info' ? '!bg-primary-500' : ''}`}>{iconMap[type]}<span>{message}</span><button onClick={onDismiss} className="ml-4"><X size={18} /></button></div>
             );
         };
         const SearchBar = ({ searchTerm, setSearchTerm, placeholder }) => (
@@ -755,11 +763,66 @@
             );
         };
         const ServiceModal = ({ isOpen, onClose, onSave, onDelete, item, customers, products, submissionStatus }) => {
-            // Tambahkan handler invoice agar tidak error
-            const handleCreateInvoice = () => {
-                // Fungsi dummy, bisa diisi logika pembuatan invoice jika diperlukan
-                if (window.addToast) window.addToast('Fitur pembuatan invoice belum tersedia.', 'info');
-                else alert('Fitur pembuatan invoice belum tersedia.');
+            // Handler untuk membuat invoice
+            const handleCreateInvoice = async () => {
+                setIsCreatingInvoice(true);
+                try {
+                    if (!item) {
+                        if (window.addToast) window.addToast('Data layanan tidak ditemukan.', 'error');
+                        return;
+                    }
+                    const product = products.find(p => p.id == (item.productId || formData.productId));
+                    if (!product) {
+                        if (window.addToast) window.addToast('Produk tidak ditemukan.', 'error');
+                        return;
+                    }
+                    // Ambil data invoice terbaru dari localStorage jika ada
+                    let invoicesArr = window.invoices;
+                    try {
+                        const cached = localStorage.getItem('hpanel_data');
+                        if (cached) {
+                            const data = JSON.parse(cached);
+                            if (Array.isArray(data.invoices)) {
+                                invoicesArr = data.invoices;
+                            }
+                        }
+                    } catch {}
+                    // Cek apakah sudah ada invoice yang belum dibayar untuk layanan ini
+                    if (invoicesArr && invoicesArr.some(inv => String(inv.serviceId) === String(item.id) && (inv.status === 'Belum Dibayar' || inv.status === 'Jatuh Tempo'))) {
+                        // Notifikasi info konsisten dengan gaya tambah pelanggan
+                        const infoMsg = 'Sudah ada invoice yang belum dibayar untuk layanan ini.';
+                        if (window.addToastFromApp) {
+                            window.addToastFromApp(infoMsg, 'info');
+                        } else if (window.addToast) {
+                            window.addToast(infoMsg, 'info');
+                        }
+                        return;
+                    }
+                    // Jika belum ada invoice, baru buat
+                    const newInvoice = {
+                        id: `INV-${Date.now().toString().slice(-5)}-${item.id}`,
+                        customerId: item.customerId,
+                        serviceId: item.id,
+                        serviceName: item.name,
+                        amount: item.price,
+                        status: 'Belum Dibayar',
+                        dueDate: item.expiryDate,
+                        publishingDate: new Date().toISOString()
+                    };
+                    if (window.postData) {
+                        const result = await window.postData('SAVE_INVOICES', [newInvoice]);
+                        if (result && result.success) {
+                            if (window.setInvoices) window.setInvoices(prev => [newInvoice, ...(prev||[])]);
+                            if (window.addToast) window.addToast('Invoice berhasil dibuat.', 'success');
+                        } else {
+                            if (window.addToast) window.addToast('Gagal membuat invoice.', 'error');
+                        }
+                    } else {
+                        if (window.addToast) window.addToast('Fungsi postData tidak tersedia.', 'error');
+                    }
+                } finally {
+                    setIsCreatingInvoice(false);
+                }
             };
             try {
                 if (!item || !Array.isArray(customers) || !Array.isArray(products) || customers.length === 0 || products.length === 0) {
@@ -957,8 +1020,8 @@
                                         e.target.src = "https://juraganweb.co.id/wp-content/uploads/2022/06/cropped-Untitled-1.png";
                                     }}
                                 />
-                                <h2 className="font-bold text-gray-800">{companyProfile.name || 'Company Name'}</h2>
-                                <p className="text-sm text-gray-600">{companyProfile.email || 'company@example.com'}</p>
+                                <h2 className="font-bold text-gray-800">Juragan Website</h2>
+                                <p className="text-sm text-gray-600">support@juraganweb.co.id</p>
                             </div>
                             <div className="text-right">
                                 <h1 className="text-3xl font-bold text-gray-800 uppercase">Invoice</h1>
@@ -1023,7 +1086,7 @@
                         <div className="border-t mt-8 pt-6 text-sm text-gray-600">
                             <h3 className="font-semibold text-gray-800 mb-2">Instruksi Pembayaran</h3>
                             <p>Silakan lakukan pembayaran ke rekening berikut:</p>
-                            <p className="font-medium mt-1">Bank BCA - 1234567890 a/n {companyProfile.name}</p>
+                            <p className="font-medium mt-1">Bank BCA - 5165287051 a/n Juragan Digital Solution</p>
                             <p className="mt-4">Terima kasih atas kepercayaan Anda.</p>
                         </div>
                     </div>
@@ -1547,11 +1610,16 @@
             const [notifications, setNotifications] = useState([]);
             const [adminProfile, setAdminProfile] = useState({ name: 'Admin', email: 'admin@example.com', avatarUrl: null });
 
-            // Expose setInvoices dan setNotifications ke window agar bisa diakses ServiceModal
+            // Expose setInvoices, setNotifications, addToast, and addToastFromApp to window for ServiceModal
             useEffect(() => {
                 window.setInvoices = setInvoices;
                 window.setNotifications = setNotifications;
-            }, [setInvoices, setNotifications]);
+                window.addToast = addToast;
+                window.addToastFromApp = (message, type = 'info') => {
+                    // Force unique id to always trigger toast
+                    setToasts(prev => [...prev, { id: Date.now() + Math.floor(Math.random()*10000), message, type }]);
+                };
+            }, [setInvoices, setNotifications, addToast, setToasts]);
             
             // Loading and Error states
             const [isLoading, setIsLoading] = useState(true);
