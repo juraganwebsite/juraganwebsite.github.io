@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Juragan Website - Panel Admin v6</title>
+    <title>Juragan Website - Panel Admin v4.4</title>
     <link rel="stylesheet" href="input-primary.css" />
     
     <!-- Tailwind CSS CDN -->
@@ -1175,11 +1175,19 @@
             const combinedChartData = useMemo(() => {
                 const now = new Date();
                 const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-                // Siapkan 6 bulan terakhir
-                const last6 = [];
-                for (let i = 5; i >= 0; i--) {
-                    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                    last6.push({
+                // Siapkan 6 bulan terakhir + 1 bulan ke depan (September), urutan kronologis kiri ke kanan
+                const totalMonths = 7;
+                const chartData = [];
+                // Mulai dari 6 bulan lalu sampai bulan depan
+                for (let i = 0; i < totalMonths; i++) {
+                    let d;
+                    if (i < totalMonths - 1) {
+                        d = new Date(now.getFullYear(), now.getMonth() - (totalMonths - 2) + i, 1);
+                    } else {
+                        // Bulan depan
+                        d = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+                    }
+                    chartData.push({
                         name: months[d.getMonth()] + ' ' + d.getFullYear(),
                         Pendapatan: 0,
                         TagihanTertunggak: 0
@@ -1188,16 +1196,16 @@
                 // Pendapatan (Lunas)
                 invoices.filter(inv => inv.status === 'Lunas').forEach(inv => {
                     const invDate = new Date(inv.dueDate);
-                    const idx = last6.findIndex(m => m.name === months[invDate.getMonth()] + ' ' + invDate.getFullYear());
-                    if (idx !== -1) last6[idx].Pendapatan += inv.amount;
+                    const idx = chartData.findIndex(m => m.name === months[invDate.getMonth()] + ' ' + invDate.getFullYear());
+                    if (idx !== -1) chartData[idx].Pendapatan += inv.amount;
                 });
                 // Tagihan Tertunggak (Belum Dibayar/Jatuh Tempo)
                 invoices.filter(inv => inv.status === 'Belum Dibayar' || inv.status === 'Jatuh Tempo').forEach(inv => {
                     const invDate = new Date(inv.dueDate);
-                    const idx = last6.findIndex(m => m.name === months[invDate.getMonth()] + ' ' + invDate.getFullYear());
-                    if (idx !== -1) last6[idx].TagihanTertunggak += inv.amount;
+                    const idx = chartData.findIndex(m => m.name === months[invDate.getMonth()] + ' ' + invDate.getFullYear());
+                    if (idx !== -1) chartData[idx].TagihanTertunggak += inv.amount;
                 });
-                return last6;
+                return chartData;
             }, [invoices]);
             
             const serviceCategoryData = useMemo(() => {
