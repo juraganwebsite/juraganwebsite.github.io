@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WiFi CRM Mobile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #e5e7eb; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Hide scrollbar for mobile container */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Custom Gradient Background matching the image */
+        .bg-app-gradient {
+            background: linear-gradient(170deg, #0e3b83 0%, #065b8e 40%, #00939a 100%);
+        }
+        /* Dark card background */
+        .bg-dark-card {
+            background-color: #072355;
+        }
+    </style>
+</head>
+<body class="flex justify-center h-screen overflow-hidden">
+
+    <!-- Mobile Device Simulator Container -->
+    <div class="w-full max-w-[414px] h-full bg-app-gradient relative flex flex-col shadow-2xl overflow-hidden text-white">
+        
+        <!-- HEADER -->
+        <header class="pt-8 pb-3 px-6 flex justify-between items-center z-10">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full overflow-hidden border border-white/30 bg-white flex items-center justify-center text-[#0e3b83] font-bold text-lg shadow-sm">
+                    A
+                </div>
+                <div>
+                    <h1 class="font-semibold text-base leading-tight tracking-wide">Akbar Ganteng</h1>
+                    <p class="text-xs text-blue-200 flex items-center gap-1 mt-0.5">
+                        ID: Admin-01 <i class="ph ph-plus-circle text-[10px]"></i>
+                    </p>
+                </div>
+            </div>
+            <button class="relative hover:bg-white/10 p-2 rounded-full transition" onclick="openNotifications()">
+                <i class="ph ph-bell text-xl"></i>
+                <span id="notif-badge" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#094787]"></span>
+            </button>
+        </header>
+
+        <!-- MAIN SCROLLABLE AREA -->
+        <main class="flex-1 overflow-y-auto no-scrollbar relative z-10 pb-20">
+            
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="fade-in block">
+                <!-- Promo / Upgrade Banner (Used for Total Customers) -->
+                <div class="mx-6 mt-2 mb-6 bg-gradient-to-r from-[#173e73] to-[#255594] rounded-2xl p-4 flex justify-between items-center shadow-lg border border-white/10 relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 opacity-20">
+                        <i class="ph ph-users-three text-8xl"></i>
+                    </div>
+                    <div class="relative z-10 w-2/3">
+                        <p class="text-xs text-blue-200 mb-1">Status Bisnis Saat Ini</p>
+                        <p class="font-bold text-sm leading-snug">Kelola <span class="text-yellow-300 text-lg" id="stat-total">0</span> pelanggan aktif bulan ini dan raih target!</p>
+                    </div>
+                    <div class="relative z-10">
+                        <div class="w-12 h-12 bg-[#0a2856] rounded-xl flex items-center justify-center transform rotate-12 shadow-inner border border-blue-400/30">
+                            <i class="ph ph-chart-line-up text-2xl text-blue-300"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QUICK MENU -->
+                <div class="px-6 mb-6">
+                    <div class="flex items-center justify-between mb-4 gap-3">
+                        <h3 class="font-medium text-sm shrink-0">Menu Cepat</h3>
+                        <div class="relative flex-1 max-w-[180px]">
+                            <i class="ph ph-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70 text-xs"></i>
+                            <input type="text" id="dash-search" oninput="searchFromDashboard(this.value)" placeholder="Cari pelanggan..." class="w-full bg-white/10 border border-white/20 rounded-full pl-8 pr-3 py-1.5 text-[11px] text-white placeholder-white/80 focus:outline-none focus:bg-white/20 focus:border-white/40 transition shadow-inner">
+                        </div>
+                    </div>
+                    <div class="flex justify-between px-2">
+                        <button onclick="switchView('customers', 'overdue')" class="flex flex-col items-center gap-2 group">
+                            <div class="w-14 h-14 bg-white text-[#0e3b83] rounded-full flex items-center justify-center text-2xl shadow-md group-hover:scale-105 transition-transform">
+                                <i class="ph ph-receipt"></i>
+                            </div>
+                            <span class="text-[11px] font-medium">Tagihan</span>
+                        </button>
+                        <button onclick="openModal()" class="flex flex-col items-center gap-2 group">
+                            <div class="w-14 h-14 bg-white text-[#0e3b83] rounded-full flex items-center justify-center text-2xl shadow-md group-hover:scale-105 transition-transform">
+                                <i class="ph ph-user-plus"></i>
+                            </div>
+                            <span class="text-[11px] font-medium">Tambah<br>Layanan</span>
+                        </button>
+                        <button onclick="switchView('customers')" class="flex flex-col items-center gap-2 group">
+                            <div class="w-14 h-14 bg-white text-[#0e3b83] rounded-full flex items-center justify-center text-2xl shadow-md group-hover:scale-105 transition-transform">
+                                <i class="ph ph-users"></i>
+                            </div>
+                            <span class="text-[11px] font-medium">Semua<br>Pelanggan</span>
+                        </button>
+                        <button onclick="refreshData()" class="flex flex-col items-center gap-2 group">
+                            <div class="w-14 h-14 bg-white text-[#0e3b83] rounded-full flex items-center justify-center text-2xl shadow-md group-hover:scale-105 transition-transform">
+                                <i class="ph ph-arrows-clockwise"></i>
+                            </div>
+                            <span class="text-[11px] font-medium">Refresh<br>Data</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CARDS AREA -->
+                <div class="px-6 space-y-4">
+                    
+                    <!-- DARK CARD: BILLING SUMMARY -->
+                    <div class="bg-dark-card rounded-[24px] p-5 shadow-lg border border-blue-400/20">
+                        <h3 class="font-semibold text-sm mb-3">Ringkasan Tagihan Periode Ini</h3>
+                        <p class="text-xs text-blue-200 mb-5 leading-relaxed">
+                            Pantau pelanggan yang menunggak atau akan segera jatuh tempo (H-7) agar target tetap aman !
+                        </p>
+                        
+                        <div class="flex gap-3 mb-5">
+                            <div class="flex-1 bg-white/10 rounded-xl p-3 text-center border border-white/5">
+                                <p class="text-xs text-blue-200 mb-1">Menunggak</p>
+                                <p class="text-2xl font-bold text-red-400" id="stat-overdue">0</p>
+                            </div>
+                            <div class="flex-1 bg-white/10 rounded-xl p-3 text-center border border-white/5">
+                                <p class="text-xs text-blue-200 mb-1">H-7 Tempo</p>
+                                <p class="text-2xl font-bold text-yellow-400" id="stat-soon">0</p>
+                            </div>
+                        </div>
+
+                        <button onclick="switchView('customers', 'overdue')" class="w-full bg-white text-[#072355] font-bold py-3 rounded-full text-sm hover:bg-gray-100 transition shadow-sm">
+                            Atur Penagihan
+                        </button>
+                    </div>
+
+                    <!-- WHITE CARD: PRIORITY CUSTOMERS -->
+                    <div class="bg-white text-gray-800 rounded-[24px] p-5 shadow-xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-[#00939a]"></div>
+                        
+                        <div class="flex justify-between items-center mb-5 gap-3">
+                            <div class="flex-1">
+                                <h3 class="font-extrabold text-[17px] text-gray-900 leading-tight">Prioritas Penagihan</h3>
+                            </div>
+                            <button onclick="switchView('customers', 'overdue')" class="shrink-0 bg-[#072355] text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-blue-900 transition shadow-md">
+                                Lihat Semua
+                            </button>
+                        </div>
+                        
+                        <div id="priority-list" class="space-y-3">
+                            <!-- Populated by JS -->
+                        </div>
+                        <div id="priority-empty" class="hidden text-center py-4">
+                            <i class="ph ph-check-circle text-3xl text-emerald-500 mb-2"></i>
+                            <p class="text-xs font-medium text-gray-500">Semua tagihan aman saat ini.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: CUSTOMERS -->
+            <div id="view-customers" class="hidden fade-in px-6">
+                
+                <div class="flex items-center gap-3 mb-6">
+                    <button onclick="switchView('dashboard')" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition">
+                        <i class="ph ph-arrow-left text-xl"></i>
+                    </button>
+                    <h2 class="text-xl font-bold">Daftar Pelanggan</h2>
+                </div>
+
+                <div class="relative mb-6">
+                    <i class="ph ph-magnifying-glass absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
+                    <input type="text" id="search-input" placeholder="Cari ID, Nama, WA, atau Alamat..." class="w-full bg-white rounded-full pl-11 pr-4 py-3.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#00939a] shadow-lg font-medium" onkeyup="handleSearch()">
+                </div>
+
+                <div class="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-2">
+                    <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-white text-[#0e3b83] shadow-sm whitespace-nowrap">Semua</button>
+                    <button onclick="setFilter('overdue')" id="filter-overdue" class="filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white border border-white/30 whitespace-nowrap">Menunggak</button>
+                    <button onclick="setFilter('soon')" id="filter-soon" class="filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white border border-white/30 whitespace-nowrap">Akan Tempo</button>
+                    <button onclick="setFilter('safe')" id="filter-safe" class="filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white border border-white/30 whitespace-nowrap">Aman</button>
+                </div>
+
+                <div id="customer-list" class="space-y-4 pb-10">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+        </main>
+        
+        <!-- DECORATIVE RINGS (Background effect) -->
+        <div class="absolute top-[20%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border-[1px] border-white/5 rounded-full pointer-events-none z-0"></div>
+        <div class="absolute top-[20%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] border-[1px] border-white/5 rounded-full pointer-events-none z-0"></div>
+
+    </div>
+
+    <!-- MODAL (Add/Edit) - Styled to look like a bottom sheet -->
+    <div id="customer-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center">
+        <div class="bg-white w-full max-w-[414px] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col fade-in h-[85vh] sm:h-auto sm:max-h-[90vh]">
+            <div class="p-5 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white rounded-t-3xl z-10">
+                <h3 class="text-lg font-bold text-[#0e3b83]" id="modal-title">Tambah Layanan Baru</h3>
+                <button onclick="closeModal()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1 text-gray-800">
+                <form id="customer-form" class="space-y-4">
+                    <input type="hidden" id="cust-id">
+                    
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Profil Pelanggan</label>
+                        <div class="space-y-3 mt-3">
+                            <div>
+                                <input type="text" id="cust-member-id" placeholder="ID Pelanggan (Kosongkan utk Otomatis)" class="w-full px-0 py-2 bg-transparent border-b border-gray-300 focus:border-[#00939a] focus:outline-none text-sm font-medium transition-colors">
+                            </div>
+                            <div>
+                                <input type="text" id="cust-name" required placeholder="Nama Lengkap" class="w-full px-0 py-2 bg-transparent border-b border-gray-300 focus:border-[#00939a] focus:outline-none text-sm font-medium transition-colors">
+                            </div>
+                            <div>
+                                <input type="tel" id="cust-phone" required placeholder="Nomor WhatsApp (08...)" class="w-full px-0 py-2 bg-transparent border-b border-gray-300 focus:border-[#00939a] focus:outline-none text-sm font-medium transition-colors">
+                            </div>
+                            <div>
+                                <textarea id="cust-address" required rows="2" placeholder="Alamat Pemasangan Lengkap" class="w-full px-0 py-2 bg-transparent border-b border-gray-300 focus:border-[#00939a] focus:outline-none text-sm font-medium transition-colors resize-none"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Detail Layanan</label>
+                        <div class="grid grid-cols-2 gap-4 mt-3">
+                            <div>
+                                <p class="text-[10px] text-gray-500 mb-0.5">Nama Paket</p>
+                                <input type="text" id="cust-package" placeholder="cth: Super 30Mbps" required class="w-full px-0 py-1.5 bg-transparent border-b border-gray-300 focus:border-[#00939a] focus:outline-none text-sm font-medium transition-colors">
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-gray-500 mb-0.5">Tarif Bulanan</p>
+                                <input type="number" id="cust-price" placeholder="cth: 250000" required class="w-full px-0 py-1.5 bg-transparent border-b border-gray-300 focus:border-[#00939a] focus:outline-none text-sm font-medium transition-colors">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <p class="text-[10px] text-gray-500 mb-0.5">Tanggal Jatuh Tempo Berikutnya</p>
+                            <input type="date" id="cust-duedate" required class="w-full px-0 py-1.5 bg-transparent border-b border-gray-300 focus:border-[#00939a] focus:outline-none text-sm font-medium transition-colors">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="p-5 bg-white border-t border-gray-100 rounded-b-3xl">
+                <button onclick="saveCustomer()" class="w-full bg-[#0e3b83] text-white font-bold py-3.5 rounded-full hover:bg-blue-900 transition shadow-lg flex justify-center items-center gap-2">
+                    <i class="ph ph-floppy-disk text-lg"></i> Simpan Data Layanan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/60 z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-[320px] shadow-2xl fade-in text-center">
+            <div class="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4 text-[#00939a]">
+                <i class="ph ph-question text-4xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Konfirmasi Pelunasan</h3>
+            <p class="text-sm text-gray-500 mb-6" id="confirm-message">Apakah Anda yakin pelanggan ini sudah melunasi tagihannya?</p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 py-3 rounded-full text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">Batal</button>
+                <button onclick="executeMarkAsPaid()" class="flex-1 py-3 rounded-full text-sm font-bold text-white bg-[#00939a] hover:bg-teal-600 transition shadow-md">Ya, Lunasi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Modal -->
+    <div id="notification-modal" class="fixed inset-0 bg-black/60 z-[65] hidden flex items-end sm:items-center justify-center">
+        <div class="bg-white w-full max-w-[414px] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col fade-in h-[70vh] sm:h-auto sm:max-h-[80vh]">
+            <div class="p-5 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white rounded-t-3xl z-10">
+                <h3 class="text-lg font-bold text-[#0e3b83]">Notifikasi Tagihan</h3>
+                <button onclick="closeNotifications()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 bg-gray-50" id="notification-list">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 -translate-y-20 opacity-0 z-[100] flex items-center gap-2 px-4 py-2 w-max max-w-[90%] shadow-lg text-[13px] font-medium transition-all duration-300 text-white bg-[#00939a] rounded-full">
+        <i id="toast-icon" class="text-lg ph ph-check-circle"></i>
+        <span id="toast-message" class="truncate">Notifikasi</span>
+    </div>
+
+    <script>
+        // --- DATA & STATE MANAGEMENT ---
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyWe1N_KYtsUok17luD4io5ChRuMvRTkjxvEwNe7kVYhxTYHFs0I20IJ5oiVQ-AvCM32g/exec'; // <-- GANTI DENGAN URL WEB APP GOOGLE SCRIPT ANDA
+        
+        const today = new Date();
+        const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+        const nextWeek = new Date(today); nextWeek.setDate(nextWeek.getDate() + 5);
+        const lastWeek = new Date(today); lastWeek.setDate(lastWeek.getDate() - 3);
+        const nextMonth = new Date(today); nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+        // PERBAIKAN 1: Cegah kemunduran tanggal karena zona waktu dengan merakit tanggal secara manual
+        const formatDateString = (d) => {
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        };
+        
+        let customers = []; // Dikosongkan, data akan ditarik dari Google Sheets
+
+        let currentView = 'dashboard';
+        let activeFilter = 'all';
+        let pendingPaymentId = null;
+        let visibleCount = 10; // Batasan jumlah data yang tampil awal
+
+        // --- UTILITIES ---
+        const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+        
+        const formatIndoDate = (dateStr) => {
+            const date = new Date(dateStr);
+            return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
+        };
+
+        const getStatus = (dueDateStr) => {
+            const due = new Date(dueDateStr);
+            due.setHours(0,0,0,0);
+            const now = new Date();
+            now.setHours(0,0,0,0);
+            
+            const diffTime = due - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+                return { id: 'overdue', text: 'Menunggak', color: 'red', bg: 'bg-red-50 text-red-600 border-red-200', icon: 'ph-warning-octagon' };
+            } else if (diffDays <= 7) {
+                return { id: 'soon', text: diffDays === 0 ? 'Hari Ini' : `H-${diffDays}`, color: 'amber', bg: 'bg-amber-50 text-amber-600 border-amber-200', icon: 'ph-warning-circle' };
+            } else {
+                return { id: 'safe', text: 'Aman', color: 'emerald', bg: 'bg-emerald-50 text-emerald-600 border-emerald-200', icon: 'ph-check-circle' };
+            }
+        };
+
+        const generateWALink = (c) => {
+            const stat = getStatus(c.nextDueDate);
+            
+            // PERBAIKAN: Ubah jadi String dan atasi "0" yang hilang dari Google Sheets
+            let phone = String(c.phone || '').trim();
+            if (phone.startsWith('8')) phone = '62' + phone;
+            else if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+            
+            // Template Pesan Dinamis
+            let msg = `Halo Bapak/Ibu ${c.name},\nKami dari Admin WiFi. Mengingatkan bahwa tagihan layanan internet Anda untuk paket *${c.package}* sebesar *${formatRupiah(c.price)}* `;
+            
+            if (stat.id === 'overdue') {
+                msg += `telah *MENUNGGAK* (Jatuh tempo pada ${formatIndoDate(c.nextDueDate)}). Mohon dapat segera melakukan pelunasan agar layanan tetap aktif. Terima kasih.`;
+            } else if (stat.id === 'soon') {
+                msg += `akan jatuh tempo pada tanggal *${formatIndoDate(c.nextDueDate)}*. Mohon persiapkan pembayarannya. Terima kasih.`;
+            } else {
+                msg += `akan jatuh tempo pada *${formatIndoDate(c.nextDueDate)}*. Terima kasih telah menjadi pelanggan setia kami.`;
+            }
+            
+            // Menggunakan api.whatsapp.com/send yang lebih handal
+            return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`;
+        };
+
+        const openWhatsApp = (id) => {
+            const c = customers.find(cust => cust.id === id);
+            if (c) {
+                const link = document.createElement('a');
+                link.href = generateWALink(c);
+                link.target = '_top'; // Memaksa buka di frame utama untuk menghindari blokir sandbox
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        };
+
+        const openWhatsAppDirect = (phone) => {
+            // PERBAIKAN: Ubah jadi String dan atasi "0" yang hilang dari Google Sheets
+            let p = String(phone || '').trim();
+            if (p.startsWith('8')) p = '62' + p;
+            else if (p.startsWith('0')) p = '62' + p.substring(1);
+            
+            const link = document.createElement('a');
+            link.href = `https://api.whatsapp.com/send?phone=${p}`;
+            link.target = '_top';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        let toastTimeout;
+        const showToast = (message, type = 'success') => {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            
+            // Atur Warna Background
+            toast.classList.remove('bg-[#00939a]', 'bg-red-500');
+            toast.classList.add(type === 'success' ? 'bg-[#00939a]' : 'bg-red-500');
+            
+            // Atur Ikon
+            icon.className = type === 'success' ? 'ph ph-check-circle text-lg flex-shrink-0' : 'ph ph-warning text-lg flex-shrink-0';
+            
+            // Atur Pesan
+            document.getElementById('toast-message').innerText = message;
+            
+            // Munculkan Toast (Hapus animasi sembunyi)
+            toast.classList.remove('-translate-y-20', 'opacity-0');
+            
+            // Reset timer jika ada notif sebelumnya
+            clearTimeout(toastTimeout);
+            
+            // Sembunyikan otomatis setelah 3 detik
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('-translate-y-20', 'opacity-0');
+            }, 3000);
+        };
+
+        const copyToClipboard = (text) => {
+            // Membuat elemen textarea sementara yang tidak terlihat
+            const el = document.createElement('textarea');
+            el.value = text;
+            el.setAttribute('readonly', '');
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
+            document.body.appendChild(el);
+            
+            // Menyalin teks menggunakan execCommand agar kompatibel
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            // Tampilkan notifikasi
+            showToast(`ID ${text} berhasil disalin!`);
+        };
+
+        // --- API HANDLERS ---
+        const fetchCustomers = async () => {
+            // Validasi apakah user masih memakai URL default/dummy
+            if (SCRIPT_URL === 'PASTE_URL_WEB_APP_ANDA_DISINI' || !SCRIPT_URL || SCRIPT_URL.includes('AKfycbycjS1cGmmHAnogUl3Pa8l1SX6PuM8Db_gRzbN_DSXJprpcSHAlHewlZa01u5zdq7obHQ')) {
+                showToast('Silakan ganti SCRIPT_URL dengan URL Web App Anda!', 'error');
+                return;
+            }
+            
+            showToast('Sinkronisasi data dari Google Sheets...');
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const text = await response.text();
+                try {
+                    const data = JSON.parse(text);
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    customers = data;
+                    refreshViews();
+                    showToast('Data berhasil dimuat!');
+                } catch (parseErr) {
+                    console.error("Format balasan salah (Bukan JSON):", text);
+                    showToast('Gagal memuat: Cek URL atau status Deploy (Akses: Anyone)', 'error');
+                }
+            } catch (error) {
+                showToast('Gagal koneksi ke server!', 'error');
+                console.error(error);
+            }
+        };
+
+        // --- RENDER FUNCTIONS ---
+        
+        const updateNotifBadge = () => {
+            const hasNotif = customers.some(c => ['overdue', 'soon'].includes(getStatus(c.nextDueDate).id));
+            const badge = document.getElementById('notif-badge');
+            if (hasNotif) {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        };
+
+        const renderDashboard = () => {
+            let total = customers.length;
+            let overdueCount = 0;
+            let soonCount = 0;
+            let priorityCustomers = [];
+
+            customers.forEach(c => {
+                const stat = getStatus(c.nextDueDate);
+                if (stat.id === 'overdue') overdueCount++;
+                if (stat.id === 'soon') soonCount++;
+                if (stat.id === 'overdue' || stat.id === 'soon') {
+                    priorityCustomers.push({ ...c, statObj: stat });
+                }
+            });
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-overdue').innerText = overdueCount;
+            document.getElementById('stat-soon').innerText = soonCount;
+
+            priorityCustomers.sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate));
+
+            const listEl = document.getElementById('priority-list');
+            const emptyEl = document.getElementById('priority-empty');
+            listEl.innerHTML = '';
+
+            if (priorityCustomers.length === 0) {
+                emptyEl.classList.remove('hidden');
+            } else {
+                emptyEl.classList.add('hidden');
+                
+                // Show max 5 on dashboard
+                priorityCustomers.slice(0, 5).forEach(c => {
+                    listEl.innerHTML += `
+                        <div class="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                            <div class="flex justify-between items-start mb-1 gap-2">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-1.5 mb-1">
+                                        <h4 class="font-bold text-sm text-gray-800 leading-tight">${c.name}</h4>
+                                        <span onclick="copyToClipboard('${c.memberId}')" title="Klik untuk menyalin ID" class="cursor-pointer hover:bg-gray-200 transition bg-gray-100 text-gray-500 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase whitespace-nowrap">${c.memberId}</span>
+                                    </div>
+                                </div>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${c.statObj.bg} whitespace-nowrap shrink-0 mt-0.5">
+                                    ${c.statObj.text}
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-end">
+                                <div class="text-xs text-gray-500">
+                                    <p class="flex items-center gap-1"><i class="ph ph-clock"></i> ${formatIndoDate(c.nextDueDate)}</p>
+                                    <p class="font-medium text-gray-700 mt-0.5">${formatRupiah(c.price)}</p>
+                                </div>
+                                <div class="flex gap-1.5 mt-2">
+                                    <button onclick="openWhatsApp(${c.id})" class="text-xs font-bold text-green-700 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm">
+                                        <i class="ph ph-whatsapp-logo text-sm"></i> Tagih
+                                    </button>
+                                    <button onclick="markAsPaid(${c.id})" class="text-xs font-bold text-[#00939a] bg-[#00939a]/10 hover:bg-[#00939a]/20 px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm">
+                                        <i class="ph ph-check text-sm"></i> Lunasi
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        };
+
+        const renderCustomerCard = (c, stat) => {
+            return `
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-gray-800 relative overflow-hidden">
+                    <div class="absolute left-0 top-0 w-1.5 h-full bg-${stat.color}-500"></div>
+                    
+                    <div class="flex justify-between items-start mb-2 pl-2 gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
+                                <h3 class="font-bold text-[15px] leading-tight">${c.name}</h3>
+                                <span onclick="copyToClipboard('${c.memberId}')" title="Klik untuk menyalin ID" class="cursor-pointer hover:bg-gray-200 transition bg-gray-100 text-gray-500 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase whitespace-nowrap">${c.memberId}</span>
+                            </div>
+                            <button onclick="openWhatsAppDirect('${c.phone}')" class="text-[11px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded flex items-center gap-1 inline-flex hover:bg-green-100 transition">
+                                <i class="ph ph-whatsapp-logo text-sm"></i> ${c.phone}
+                            </button>
+                        </div>
+                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-full border ${stat.bg} flex items-center gap-1 mt-0.5 shrink-0 whitespace-nowrap">
+                            <i class="ph ${stat.icon}"></i> ${stat.text}
+                        </span>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-xl p-3 mt-3 pl-4 flex justify-between items-center border border-gray-100">
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wide">Paket & Tagihan</p>
+                            <p class="font-bold text-sm text-[#0e3b83] mt-0.5">${c.package}</p>
+                            <p class="text-xs font-medium text-gray-600">${formatRupiah(c.price)}/bln</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wide">Jatuh Tempo</p>
+                            <p class="font-bold text-sm text-gray-800 mt-0.5">${formatIndoDate(c.nextDueDate)}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 pl-2 flex gap-2">
+                        <button onclick="openWhatsApp(${c.id})" title="Tagih via WhatsApp" class="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center hover:bg-green-200 transition shrink-0 shadow-sm">
+                            <i class="ph ph-whatsapp-logo text-2xl"></i>
+                        </button>
+                        <button onclick="markAsPaid(${c.id})" class="flex-1 bg-[#00939a] text-white text-xs font-bold py-2 rounded-xl hover:bg-teal-600 transition shadow-sm flex items-center justify-center gap-1">
+                            <i class="ph ph-check-square-offset text-lg"></i> Catat Lunas
+                        </button>
+                        <button onclick="editCustomer(${c.id})" class="w-10 h-10 bg-gray-100 text-gray-600 rounded-xl flex items-center justify-center hover:bg-gray-200 transition shrink-0 shadow-sm">
+                            <i class="ph ph-pencil-simple text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        };
+
+        const renderCustomers = (filterText = '') => {
+            const listEl = document.getElementById('customer-list');
+            listEl.innerHTML = '';
+            
+            let filtered = [...customers].sort((a, b) => a.name.localeCompare(b.name));
+            
+            // Apply text search
+            if (filterText) {
+                const lower = filterText.toLowerCase();
+                filtered = filtered.filter(c => 
+                    String(c.name || '').toLowerCase().includes(lower) || 
+                    String(c.phone || '').toLowerCase().includes(lower) ||
+                    String(c.memberId || '').toLowerCase().includes(lower) ||
+                    String(c.address || '').toLowerCase().includes(lower)
+                );
+            }
+
+            // Apply category filter
+            if (activeFilter === 'overdue') {
+                filtered = filtered.filter(c => getStatus(c.nextDueDate).id === 'overdue');
+                filtered.sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate)); // Sort by urgency
+            } else if (activeFilter === 'soon') {
+                filtered = filtered.filter(c => getStatus(c.nextDueDate).id === 'soon');
+                filtered.sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate)); // Sort by urgency
+            } else if (activeFilter === 'safe') {
+                filtered = filtered.filter(c => getStatus(c.nextDueDate).id === 'safe');
+            }
+
+            if(filtered.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-10 bg-white/10 rounded-2xl border border-white/20">
+                        <i class="ph ph-magnifying-glass text-4xl text-white/50 mb-2"></i>
+                        <p class="text-sm font-medium text-white/80">Tidak ada data ditemukan.</p>
+                    </div>`;
+                return;
+            }
+
+            // Batasi data yang dirender sesuai visibleCount
+            const toRender = filtered.slice(0, visibleCount);
+
+            let htmlString = '';
+            toRender.forEach(c => {
+                const stat = getStatus(c.nextDueDate);
+                htmlString += renderCustomerCard(c, stat);
+            });
+            
+            // Tambahkan tombol Load More jika masih ada data yang disembunyikan
+            if (visibleCount < filtered.length) {
+                htmlString += `
+                    <div class="text-center pt-2 pb-6">
+                        <button onclick="loadMoreCustomers()" class="text-[13px] font-bold text-[#0e3b83] bg-white hover:bg-gray-50 px-6 py-2.5 rounded-full transition shadow-md border border-gray-200">
+                            Tampilkan Lebih Banyak
+                        </button>
+                    </div>
+                `;
+            }
+            
+            listEl.innerHTML = htmlString;
+        };
+
+        // --- ACTIONS ---
+
+        const openNotifications = () => {
+            const listEl = document.getElementById('notification-list');
+            listEl.innerHTML = '';
+            
+            let notifCustomers = customers.filter(c => ['overdue', 'soon'].includes(getStatus(c.nextDueDate).id));
+            notifCustomers.sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate));
+
+            if (notifCustomers.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-10">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="ph ph-bell-z text-3xl text-gray-400"></i>
+                        </div>
+                        <p class="text-sm font-bold text-gray-600 mb-1">Tidak ada notifikasi baru</p>
+                        <p class="text-xs text-gray-500">Semua tagihan pelanggan dalam kondisi aman.</p>
+                    </div>
+                `;
+            } else {
+                notifCustomers.forEach(c => {
+                    const stat = getStatus(c.nextDueDate);
+                    listEl.innerHTML += `
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm mb-3 flex gap-3 items-start cursor-pointer hover:bg-gray-50 transition" onclick="closeNotifications(); switchView('customers', 'overdue');">
+                            <div class="w-10 h-10 rounded-full ${stat.bg} flex items-center justify-center flex-shrink-0">
+                                <i class="ph ${stat.icon} text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-800">${c.name}</h4>
+                                <p class="text-[11px] text-gray-500 mt-1 leading-relaxed">Tagihan <span class="font-bold text-gray-700">${formatRupiah(c.price)}</span> terpantau <span class="font-bold text-${stat.color}-600">${stat.text}</span>.</p>
+                                <p class="text-[10px] text-gray-400 mt-2"><i class="ph ph-clock"></i> Jatuh Tempo: ${formatIndoDate(c.nextDueDate)}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('notification-modal').classList.remove('hidden');
+        };
+
+        const closeNotifications = () => {
+            document.getElementById('notification-modal').classList.add('hidden');
+        };
+
+        const markAsPaid = (id) => {
+            const cust = customers.find(c => c.id === id);
+            if (cust) {
+                pendingPaymentId = id;
+                document.getElementById('confirm-message').innerHTML = `Apakah Anda yakin <b>${cust.name}</b> sudah melunasi tagihan?`;
+                document.getElementById('confirm-modal').classList.remove('hidden');
+            }
+        };
+
+        const closeConfirmModal = () => {
+            pendingPaymentId = null;
+            document.getElementById('confirm-modal').classList.add('hidden');
+        };
+
+        const executeMarkAsPaid = async () => {
+            if (pendingPaymentId !== null) {
+                const index = customers.findIndex(c => c.id === pendingPaymentId);
+                if (index > -1) {
+                    // PERBAIKAN 2: Ekstrak tanggal secara spesifik dan atur jam 12 siang agar tidak mundur harinya
+                    const dateStr = String(customers[index].nextDueDate).split('T')[0];
+                    const [yyyy, mm, dd] = dateStr.split('-');
+                    
+                    const currentDue = new Date(yyyy, mm - 1, dd, 12, 0, 0);
+                    currentDue.setMonth(currentDue.getMonth() + 1);
+                    const newDateStr = formatDateString(currentDue);
+                    
+                    // Simpan data lama untuk rollback jika terjadi error
+                    const oldDateStr = customers[index].nextDueDate;
+                    
+                    // Optimistic UI Update (update tampilan lokal dulu)
+                    customers[index].nextDueDate = newDateStr;
+                    showToast(`Memproses pelunasan...`);
+                    refreshViews();
+                    closeConfirmModal();
+                    
+                    // Simpan ke Google Sheets
+                    try {
+                        const response = await fetch(SCRIPT_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({
+                                action: 'markPaid',
+                                id: pendingPaymentId,
+                                memberId: customers[index].memberId, // PERBAIKAN: Kirim juga memberId
+                                newDate: newDateStr
+                            })
+                        });
+                        const text = await response.text();
+                        try {
+                            const resData = JSON.parse(text);
+                            if (resData.status === 'success') {
+                                showToast(`Berhasil! Jatuh tempo ${customers[index].name} diperpanjang.`);
+                            } else {
+                                throw new Error(resData.message || 'Gagal dari server');
+                            }
+                        } catch(e) {
+                            // Rollback (batalkan perubahan di layar karena gagal di server)
+                            customers[index].nextDueDate = oldDateStr;
+                            refreshViews();
+                            
+                            // Tampilkan pesan error aslinya agar ketahuan penyebabnya
+                            showToast(e.message || 'Gagal merespons data JSON', 'error');
+                            console.error('Server response:', text);
+                        }
+                    } catch (error) {
+                        // Rollback (batalkan perubahan)
+                        customers[index].nextDueDate = oldDateStr;
+                        refreshViews();
+                        
+                        showToast('Gagal menyimpan ke server!', 'error');
+                        console.error(error);
+                    }
+                } else {
+                    closeConfirmModal();
+                }
+            }
+        };
+
+        const saveCustomer = async () => {
+            const id = document.getElementById('cust-id').value;
+            let memberId = document.getElementById('cust-member-id').value;
+            
+            // Jika ID kosong, buatkan ID otomatis
+            if (!memberId) {
+                memberId = `WIFI-${Math.floor(100 + Math.random() * 900)}`;
+            }
+
+            const name = document.getElementById('cust-name').value;
+            const phone = document.getElementById('cust-phone').value;
+            const address = document.getElementById('cust-address').value;
+            const pkg = document.getElementById('cust-package').value;
+            const price = document.getElementById('cust-price').value;
+            const dueDate = document.getElementById('cust-duedate').value;
+
+            if(!name || !phone || !address || !pkg || !price || !dueDate) {
+                showToast('Mohon lengkapi semua data!', 'error');
+                return;
+            }
+
+            // PERBAIKAN: Validasi ID Pelanggan Duplikat (Ubah ke String agar tidak crash jika ID berupa angka)
+            const isDuplicate = customers.some(c => 
+                String(c.memberId || '').toLowerCase() === String(memberId || '').toLowerCase() && 
+                String(c.id) !== String(id)
+            );
+
+            if (isDuplicate) {
+                showToast(`Gagal! ID "${memberId}" sudah digunakan.`, 'error');
+                return; // Hentikan proses simpan
+            }
+
+            const customerData = {
+                id: id || '',
+                memberId: memberId,
+                name: name,
+                phone: phone,
+                address: address,
+                package: pkg,
+                price: parseFloat(price),
+                nextDueDate: dueDate
+            };
+
+            showToast('Menyimpan ke Google Sheets...');
+            closeModal();
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'save',
+                        data: customerData
+                    })
+                });
+                
+                const text = await response.text();
+                try {
+                    const resData = JSON.parse(text);
+                    if (resData.status === 'success') {
+                        customerData.id = resData.id || parseInt(id);
+                        
+                        if (id) {
+                            const index = customers.findIndex(c => c.id === parseInt(id));
+                            if (index > -1) customers[index] = customerData;
+                        } else {
+                            customers.push(customerData);
+                        }
+                        
+                        showToast('Data berhasil disimpan!');
+                        refreshViews();
+                    } else {
+                        showToast(`Gagal: ${resData.message || 'Error dari server'}`, 'error');
+                    }
+                } catch(e) {
+                    showToast('Gagal menyimpan: Cek log console', 'error');
+                    console.error('Server response:', text);
+                }
+            } catch (error) {
+                showToast('Terjadi kesalahan koneksi!', 'error');
+                console.error(error);
+            }
+        };
+
+        const editCustomer = (id) => {
+            const cust = customers.find(c => c.id === id);
+            if(cust) {
+                document.getElementById('modal-title').innerText = 'Edit Layanan';
+                document.getElementById('cust-id').value = cust.id;
+                document.getElementById('cust-member-id').value = cust.memberId || '';
+                document.getElementById('cust-name').value = cust.name;
+                document.getElementById('cust-phone').value = cust.phone;
+                document.getElementById('cust-address').value = cust.address;
+                document.getElementById('cust-package').value = cust.package;
+                document.getElementById('cust-price').value = cust.price;
+                
+                // Pastikan format tanggal valid untuk input type="date" (YYYY-MM-DD)
+                let validDateVal = '';
+                if (cust.nextDueDate) {
+                    const d = new Date(cust.nextDueDate);
+                    if (!isNaN(d.getTime())) {
+                        const yyyy = d.getFullYear();
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        validDateVal = `${yyyy}-${mm}-${dd}`;
+                    } else if (typeof cust.nextDueDate === 'string') {
+                        validDateVal = cust.nextDueDate.split('T')[0]; // Fallback jika string murni
+                    }
+                }
+                document.getElementById('cust-duedate').value = validDateVal;
+                
+                document.getElementById('customer-modal').classList.remove('hidden');
+            }
+        };
+
+        const handleSearch = () => {
+            visibleCount = 10; // Reset ke 10 data saat mulai mengetik pencarian
+            filterCustomers();
+        };
+
+        const searchFromDashboard = (val) => {
+            if(val.trim() !== '') {
+                // Pindah ke halaman pelanggan
+                switchView('customers', 'all');
+                
+                // Pindahkan kata kunci ke kolom pencarian utama
+                const mainSearch = document.getElementById('search-input');
+                mainSearch.value = val;
+                mainSearch.focus();
+                
+                // Jalankan pencarian
+                handleSearch();
+                
+                // Bersihkan kolom pencarian dashboard agar kosong saat kembali
+                document.getElementById('dash-search').value = '';
+            }
+        };
+
+        const loadMoreCustomers = () => {
+            visibleCount += 10; // Tambah 10 data lagi
+            filterCustomers();
+        };
+
+        const filterCustomers = () => {
+            const term = document.getElementById('search-input').value;
+            renderCustomers(term);
+        };
+
+        const setFilter = (type) => {
+            activeFilter = type;
+            visibleCount = 10; // Reset ke 10 data saat pindah tab filter
+            
+            // Reset styles
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = 'filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white border border-white/30 whitespace-nowrap transition';
+            });
+            
+            // Set active style
+            const activeBtn = document.getElementById(`filter-${type}`);
+            if (activeBtn) {
+                activeBtn.className = 'filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-white text-[#0e3b83] shadow-sm whitespace-nowrap transition';
+                
+                // Menggulir secara spesifik hanya pada container tombol (mencegah bug layout halaman bergeser)
+                const container = activeBtn.parentElement;
+                const scrollPos = activeBtn.offsetLeft - (container.clientWidth / 2) + (activeBtn.clientWidth / 2);
+                container.scrollTo({ left: scrollPos, behavior: 'smooth' });
+            }
+            
+            filterCustomers();
+        };
+
+        // --- UI STATE & INITIALIZATION ---
+
+        const switchView = (viewId, initFilter = 'all') => {
+            currentView = viewId;
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-customers').classList.add('hidden');
+            
+            if (viewId === 'dashboard') {
+                document.getElementById('view-dashboard').classList.remove('hidden');
+                renderDashboard();
+            } else if (viewId === 'customers') {
+                document.getElementById('view-customers').classList.remove('hidden');
+                document.getElementById('search-input').value = '';
+                setFilter(initFilter);
+            }
+        };
+
+        const openModal = () => {
+            document.getElementById('modal-title').innerText = 'Tambah Layanan Baru';
+            document.getElementById('customer-form').reset();
+            document.getElementById('cust-id').value = '';
+            document.getElementById('cust-member-id').value = '';
+            document.getElementById('cust-duedate').value = formatDateString(today);
+            document.getElementById('customer-modal').classList.remove('hidden');
+        };
+
+        const closeModal = () => {
+            document.getElementById('customer-modal').classList.add('hidden');
+        };
+
+        const refreshData = () => {
+            fetchCustomers();
+        };
+
+        const refreshViews = () => {
+            if(currentView === 'dashboard') renderDashboard();
+            if(currentView === 'customers') filterCustomers();
+            updateNotifBadge();
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            switchView('dashboard');
+            fetchCustomers();
+        });
+
+    </script>
+</body>
+</html>
